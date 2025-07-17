@@ -1,1 +1,8 @@
 CerberusGate - Firewall
+Sniffer - scan passivo
+
+Randomizar as portas que serão escaneadas para nao gerar detecção por sequencia.
+Diminuir o tempo entre scan de portas.
+
+Selecionar um front end decente para o projeto no momento possuimos dois modelos de interface
+um mais moderno  e um baseado no burp suit
