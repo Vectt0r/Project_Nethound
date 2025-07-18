@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import scan_router
+from src.routers import scan_router
 
 app = FastAPI(title="Nethound Backend", description="Nethound Backend", version="1.1.0")
 
