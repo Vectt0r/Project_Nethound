@@ -4,5 +4,35 @@ Sniffer - scan passivo
 Randomizar as portas que serão escaneadas para nao gerar detecção por sequencia.
 Diminuir o tempo entre scan de portas.
 
-Selecionar um front end decente para o projeto no momento possuimos dois modelos de interface
-um mais moderno  e um baseado no burp suit
+Tipos de Monitoramento de Rede
+Monitoramento de disponibilidade (ping, ICMP)
+
+Verifica se hosts estão online.
+
+Monitoramento de tráfego (passivo)
+
+Captura e analisa pacotes de dados em tempo real.
+
+Monitoramento de largura de banda e uso de portas
+
+Mede o quanto de tráfego está passando e por onde.
+
+Monitoramento de serviços (portas e banners) <-------------------- estamos aqui
+
+Verifica se serviços (HTTP, DNS, SMTP, etc.) estão ativos e respondendo.
+
+Análise de protocolos (HTTP, TLS, DNS, etc.)
+
+Inspeciona protocolos de camada 7 para detectar falhas, padrões e vulnerabilidades.
+
+--> ESTUDAR
+
+Um IPS pode bloquear ou negar o tráfego com base em uma regra positiva ou correspondência de assinatura.
+
+Um IDS verifica os dados em um banco de dados de regras ou assinaturas de ataque, em busca de tráfego malicioso.
+
+Um DLP é projetado para impedir que dados confidenciais sejam roubados ou escapem de uma rede.
+
+Um SIEM coleta e analisa alertas de segurança, logs e outros dados históricos e em tempo real de dispositivos de segurança na rede.
+
+
