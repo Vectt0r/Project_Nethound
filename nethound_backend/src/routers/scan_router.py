@@ -15,7 +15,8 @@ async def scan_port(request: ScanRequest):
     for port in request.ports:
         if not (1 <= port <= 65535):
             raise HTTPException(status_code=400, detail=f'Porta inválida: {port}')
-        state = PortScanner.scan_tcp_port(request.ip, port)
+        scanner = PortScanner(request.ip, port)
+        state = scanner.scan_tcp_port()
         results.append({"ip": request.ip, "port": port, "state": state})
 
     return results
