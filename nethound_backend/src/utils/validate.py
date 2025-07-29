@@ -13,9 +13,6 @@ def validate_ip(ip: str) -> bool:
         pass
     host_pattern = r'^[a-zA-Z0-9]([a-zA-Z0-9\-\.]*[a-zA-Z0-9])?$'
     return bool(re.match(host_pattern, ip))
-from typing import Optional, List
-
-from typing import List
 
 def parse_ports(port_input: str) -> Optional[List[int]]:
 
