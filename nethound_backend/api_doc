@@ -1,0 +1,50 @@
+{POST} -> http://127.0.0.1:8000/scan/
+
+(SEND)
+{
+  "ip": "example.com",
+  "ports": "80,443,22",
+  "protocol": "TCP",
+  "silent_mode": false
+}
+
+(RESPONSE)
+{
+    "results": [
+        {
+            "ip": "example.com",
+            "port": 22,
+            "state": "error",
+            "banner": null,
+            "ssl_info": null
+        },
+        {
+            "ip": "example.com",
+            "port": 80,
+            "state": "open",
+            "banner": "HTTP/1.0 400 Bad Request\r\nServer: AkamaiGHost\r\nMime-Version: 1.0\r\nContent-Type: text/html\r\nContent-Length: 310\r\nExpires: Tue, 29 Jul 2025 16:49:09 GMT\r\nDate: Tue, 29 Jul 2025 16:49:09 GMT\r\nConnection: close",
+            "ssl_info": null
+        },
+        {
+            "ip": "example.com",
+            "port": 443,
+            "state": "open",
+            "banner": null,
+            "ssl_info": {
+                "cn": "*.example.com",
+                "issuer": "DigiCert Inc",
+                "valid_from": "Jan 15 00:00:00 2025 GMT",
+                "valid_to": "Jan 15 23:59:59 2026 GMT",
+                "is_valid": true
+            }
+        }
+    ],
+    "stats": {
+        "total_ports": 3,
+        "open_ports": 2,
+        "closed_ports": 1,
+        "scan_duration_seconds": 3.94
+    }
+}
+
+================================================================================================================
