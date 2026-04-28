@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NETHOUND — Network Scanner</title>
+  <style>
+    :root {
+      --bg:        #090d16;
+      --bg2:       #0e1421;
+      --bg3:       #141b2d;
+      --border:    #1e2d4a;
+      --green:     #00e676;
+      --green-dim: #00e67622;
+      --red:       #ff4757;
+      --red-dim:   #ff475722;
+      --yellow:    #ffc107;
+      --yellow-dim:#ffc10722;
+      --blue:      #40c4ff;
+      --blue-dim:  #40c4ff22;
+      --text:      #c8d8f0;
+      --text-dim:  #5a7090;
+      --font:      'Courier New', 'Consolas', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--green);
+      letter-spacing: 4px;
+    }
+
+    .logo svg { width: 22px; height: 22px; }
+    .logo-sub { font-size: 10px; color: var(--text-dim); letter-spacing: 2px; font-weight: normal; margin-top: 2px; }
+
+    .header-right { display: flex; align-items: center; gap: 16px; }
+
+    .badge { font-size: 10px; padding: 3px 8px; border-radius: 3px; border: 1px solid var(--border); color: var(--text-dim); letter-spacing: 1px; }
+
+    .health-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); display: inline-block; margin-right: 6px; transition: background .3s; }
+    .health-dot.online { background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+    a.hdr-link { color: var(--text-dim); text-decoration: none; font-size: 11px; letter-spacing: 1px; transition: color .2s; }
+    a.hdr-link:hover { color: var(--green); }
+
+    /* ── LAYOUT ── */
+    .workspace {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      height: calc(100vh - 49px);
+    }
+
+    .left-panel {
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── CARD ── */
+    .card { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 18px; }
+
+    .card-title {
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ── FORM ── */
+    .field { margin-bottom: 14px; }
+
+    label { display: block; font-size: 10px; letter-spacing: 2px; color: var(--text-dim); margin-bottom: 6px; }
+
+    input[type="text"], input[type="number"] {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      padding: 8px 10px;
+      border-radius: 4px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    input[type="text"]:focus, input[type="number"]:focus { border-color: var(--green); }
+    input[type="text"]::placeholder, input[type="number"]::placeholder { color: var(--text-dim); }
+
+    .presets { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+
+    .preset-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--font);
+      font-size: 10px;
+      letter-spacing: 1px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .preset-btn:hover { border-color: var(--green); color: var(--green); }
+
+    .proto-group { display: flex; gap: 8px; }
+
+    .proto-btn {
+      flex: 1;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--font);
+      font-size: 11px;
+      letter-spacing: 2px;
+      padding: 7px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all .15s;
+      text-align: center;
+    }
+    .proto-btn.active { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .toggle-row label { margin: 0; }
+
+    .toggle { position: relative; width: 38px; height: 20px; cursor: pointer; }
+    .toggle input { display: none; }
+    .toggle-track { width: 38px; height: 20px; background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; transition: all .2s; }
+    .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; background: var(--text-dim); border-radius: 50%; transition: all .2s; }
+    .toggle input:checked ~ .toggle-track { background: var(--green-dim); border-color: var(--green); }
+    .toggle input:checked ~ .toggle-thumb { left: 21px; background: var(--green); }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--green-dim);
+      border: 1px solid var(--green);
+      color: var(--green);
+      font-family: var(--font);
+      font-size: 13px;
+      letter-spacing: 3px;
+      padding: 11px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all .2s;
+      position: relative;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--green); color: var(--bg); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary.scanning::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0,230,118,.2), transparent);
+      animation: sweep 1.2s infinite;
+    }
+
+    .btn-blue {
+      width: 100%;
+      background: var(--blue-dim);
+      border: 1px solid var(--blue);
+      color: var(--blue);
+      font-family: var(--font);
+      font-size: 13px;
+      letter-spacing: 3px;
+      padding: 11px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all .2s;
+      position: relative;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .btn-blue:hover:not(:disabled) { background: var(--blue); color: var(--bg); }
+    .btn-blue:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-blue.pinging::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(64,196,255,.2), transparent);
+      animation: sweep 1s infinite;
+    }
+
+    @keyframes sweep { to { left: 100%; } }
+
+    /* ── HISTORY ── */
+    .history-list { display: flex; flex-direction: column; gap: 6px; }
+
+    .history-item {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 10px;
+      cursor: pointer;
+      transition: border-color .15s;
+    }
+    .history-item:hover { border-color: var(--green); }
+    .history-item .hi-host { color: var(--blue); font-size: 12px; }
+    .history-item .hi-meta { color: var(--text-dim); font-size: 10px; margin-top: 3px; }
+    .history-item .hi-stats { display: flex; gap: 10px; margin-top: 4px; font-size: 10px; }
+    .hi-open  { color: var(--green); }
+    .hi-closed { color: var(--text-dim); }
+
+    .btn-clear {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--red);
+      font-family: var(--font);
+      font-size: 10px;
+      letter-spacing: 1px;
+      padding: 5px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all .15s;
+      margin-top: 10px;
+      width: 100%;
+    }
+    .btn-clear:hover { background: var(--red-dim); border-color: var(--red); }
+
+    /* ── RIGHT PANEL TABS ── */
+    .right-tabs {
+      display: flex;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .right-tab {
+      padding: 10px 20px;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all .2s;
+    }
+    .right-tab.active { color: var(--green); border-bottom-color: var(--green); }
+    .right-tab:hover:not(.active) { color: var(--text); }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      padding: 10px 20px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      gap: 0;
+    }
+
+    .stat-item { display: flex; align-items: center; gap: 8px; padding: 0 16px; border-right: 1px solid var(--border); }
+    .stat-item:first-child { padding-left: 0; }
+    .stat-item:last-child  { border-right: none; }
+
+    .stat-label { font-size: 9px; letter-spacing: 2px; color: var(--text-dim); }
+    .stat-value { font-size: 18px; font-weight: bold; color: var(--text); }
+    .stat-value.green { color: var(--green); }
+    .stat-value.red   { color: var(--red); }
+    .stat-value.blue  { color: var(--blue); }
+    .stat-value.yellow { color: var(--yellow); }
+
+    .stats-badge {
+      font-size: 9px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      letter-spacing: 1px;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+    }
+    .stats-badge.on { border-color: var(--yellow); color: var(--yellow); background: var(--yellow-dim); }
+
+    .stats-actions { margin-left: auto; display: flex; gap: 8px; }
+
+    .export-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--font);
+      font-size: 10px;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .export-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .filter-label { font-size: 10px; letter-spacing: 1px; color: var(--text-dim); }
+
+    .filter-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--font);
+      font-size: 10px;
+      letter-spacing: 1px;
+      padding: 3px 9px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .filter-btn.active { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+
+    #searchInput {
+      margin-left: auto;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 3px;
+      outline: none;
+      width: 160px;
+      transition: border-color .2s;
+    }
+    #searchInput:focus { border-color: var(--green); }
+    #searchInput::placeholder { color: var(--text-dim); }
+
+    /* ── RESULTS TABLE ── */
+    .results-area { flex: 1; overflow-y: auto; }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 12px;
+      color: var(--text-dim);
+    }
+    .empty-state svg { opacity: .2; }
+    .empty-state p { font-size: 11px; letter-spacing: 2px; }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead { position: sticky; top: 0; z-index: 10; background: var(--bg2); }
+
+    th {
+      text-align: left;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: var(--text-dim);
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      font-weight: normal;
+    }
+
+    td { padding: 9px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+
+    .port-num { font-size: 14px; color: var(--blue); font-weight: bold; }
+
+    .state-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 10px;
+      letter-spacing: 1px;
+      font-weight: bold;
+    }
+    .state-open     { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
+    .state-filtered { background: var(--yellow-dim); color: var(--yellow); border: 1px solid var(--yellow); }
+    .state-closed   { background: rgba(255,71,87,.1); color: var(--red); border: 1px solid var(--red); }
+
+    .proto-tag { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; }
+
+    .banner-text {
+      font-size: 11px;
+      color: var(--text);
+      max-width: 280px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+    }
+    .banner-text:hover { white-space: normal; word-break: break-all; }
+
+    .ssl-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .ssl-valid   { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
+    .ssl-invalid { background: var(--red-dim);   color: var(--red);   border: 1px solid var(--red); }
+
+    .ssl-detail {
+      margin-top: 6px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-size: 11px;
+      line-height: 1.7;
+      display: none;
+    }
+    .ssl-detail.visible { display: block; }
+    .ssl-key { color: var(--text-dim); }
+    .ssl-val  { color: var(--text); }
+
+    /* ── PROGRESS ── */
+    .progress-bar { height: 2px; background: var(--border); overflow: hidden; flex-shrink: 0; }
+    .progress-fill { height: 100%; background: var(--green); width: 0%; transition: width .3s; }
+    .progress-fill.indeterminate {
+      width: 30%;
+      animation: progress-slide 1.2s infinite ease-in-out;
+    }
+    .progress-fill.blue-bar { background: var(--blue); }
+    @keyframes progress-slide { 0% { margin-left: -30%; } 100% { margin-left: 100%; } }
+
+    /* ── PING TABLE ── */
+    .ping-host { font-size: 13px; color: var(--blue); font-weight: bold; }
+
+    .online-badge  { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); padding: 2px 8px; border-radius: 3px; font-size: 10px; letter-spacing: 1px; }
+    .offline-badge { background: var(--red-dim);   color: var(--red);   border: 1px solid var(--red);   padding: 2px 8px; border-radius: 3px; font-size: 10px; letter-spacing: 1px; }
+
+    .latency-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .latency-val { font-size: 13px; font-weight: bold; }
+    .latency-good    { color: var(--green); }
+    .latency-medium  { color: var(--yellow); }
+    .latency-high    { color: var(--red); }
+
+    .ping-count-row { display: flex; align-items: center; gap: 8px; margin-top: 7px; }
+    .ping-count-row label { margin: 0; white-space: nowrap; }
+    .ping-count-row input { width: 60px; }
+
+    .no-results { text-align: center; padding: 40px; color: var(--text-dim); font-size: 11px; letter-spacing: 2px; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 16px;
+      font-size: 12px;
+      letter-spacing: 1px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all .25s;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    #toast.show   { opacity: 1; transform: translateY(0); }
+    #toast.error  { border-color: var(--red);   color: var(--red); }
+    #toast.success{ border-color: var(--green); color: var(--green); }
+    #toast.info   { border-color: var(--blue);  color: var(--blue); }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track  { background: var(--bg); }
+    ::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="12" cy="12" r="9"/>
+      <circle cx="12" cy="12" r="5"/>
+      <circle cx="12" cy="12" r="1" fill="currentColor"/>
+      <line x1="12" y1="3" x2="12" y2="1"/>
+      <line x1="12" y1="23" x2="12" y2="21"/>
+      <line x1="3" y1="12" x2="1" y2="12"/>
+      <line x1="23" y1="12" x2="21" y2="12"/>
+    </svg>
+    <div>NETHOUND<div class="logo-sub">NETWORK RECON</div></div>
+  </div>
+  <div class="header-right">
+    <span><span class="health-dot" id="healthDot"></span><span id="healthText" style="font-size:10px;letter-spacing:1px;color:var(--text-dim)">CHECKING</span></span>
+    <a href="/docs" class="hdr-link" target="_blank">API DOCS</a>
+    <span class="badge">v1.3.0</span>
+  </div>
+</header>
+
+<div class="workspace">
+
+  <!-- ── LEFT PANEL ── -->
+  <div class="left-panel">
+
+    <!-- SCAN CONFIG -->
+    <div class="card">
+      <div class="card-title">PORT SCAN</div>
+
+      <div class="field">
+        <label>TARGET (IP / HOST)</label>
+        <input type="text" id="targetInput" placeholder="192.168.1.1 ou example.com" />
+      </div>
+
+      <div class="field">
+        <label>PORTS</label>
+        <input type="text" id="portsInput" placeholder="80,443,8080-8090" />
+        <div class="presets" id="presetBtns">
+          <button class="preset-btn" data-preset="web">WEB</button>
+          <button class="preset-btn" data-preset="common">COMMON</button>
+          <button class="preset-btn" data-preset="database">DATABASE</button>
+          <button class="preset-btn" data-preset="remote">REMOTE</button>
+          <button class="preset-btn" data-preset="mail">MAIL</button>
+          <button class="preset-btn" data-preset="top100">TOP 100</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>PROTOCOL</label>
+        <div class="proto-group">
+          <button class="proto-btn active" id="protoTCP">TCP</button>
+          <button class="proto-btn" id="protoUDP">UDP</button>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <label>SILENT MODE <span style="color:var(--text-dim);font-size:9px">(skip banners)</span></label>
+        <label class="toggle">
+          <input type="checkbox" id="silentMode" />
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <label>RANDOMIZE PORTS <span style="color:var(--text-dim);font-size:9px">(evade detection)</span></label>
+        <label class="toggle">
+          <input type="checkbox" id="randomizeMode" />
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+
+      <button class="btn-primary" id="scanBtn" onclick="startScan()">▶ SCAN NOW</button>
+    </div>
+
+    <!-- PING MONITOR -->
+    <div class="card">
+      <div class="card-title">PING MONITOR</div>
+
+      <div class="field">
+        <label>HOSTS (vírgula para múltiplos)</label>
+        <input type="text" id="pingHosts" placeholder="8.8.8.8, google.com, 192.168.1.1" />
+      </div>
+
+      <div class="ping-count-row">
+        <label>PINGS:</label>
+        <input type="number" id="pingCount" value="3" min="1" max="10" />
+      </div>
+
+      <button class="btn-blue" id="pingBtn" onclick="startPing()">◉ PING HOSTS</button>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="card" style="flex:1">
+      <div class="card-title">SCAN HISTORY</div>
+      <div class="history-list" id="historyList">
+        <div style="color:var(--text-dim);font-size:11px;letter-spacing:1px">No scans yet</div>
+      </div>
+      <button class="btn-clear" onclick="clearHistory()">✕ CLEAR HISTORY</button>
+    </div>
+
+  </div>
+
+  <!-- ── RIGHT PANEL ── -->
+  <div class="right-panel">
+
+    <div class="right-tabs">
+      <div class="right-tab active" id="tabScan" onclick="switchTab('scan')">PORT SCAN RESULTS</div>
+      <div class="right-tab" id="tabPing" onclick="switchTab('ping')">PING MONITOR</div>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <!-- SCAN VIEW -->
+    <div id="viewScan" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+      <div class="stats-bar" id="statsBar" style="display:none">
+        <div class="stat-item">
+          <div><div class="stat-label">TOTAL</div><div class="stat-value blue" id="statTotal">0</div></div>
+        </div>
+        <div class="stat-item">
+          <div><div class="stat-label">OPEN</div><div class="stat-value green" id="statOpen">0</div></div>
+        </div>
+        <div class="stat-item">
+          <div><div class="stat-label">CLOSED</div><div class="stat-value red" id="statClosed">0</div></div>
+        </div>
+        <div class="stat-item">
+          <div><div class="stat-label">DURATION</div><div class="stat-value" id="statDuration">0s</div></div>
+        </div>
+        <div class="stat-item">
+          <div><div class="stat-label">WORKERS</div><div class="stat-value yellow" id="statWorkers">0</div></div>
+        </div>
+        <span class="stats-badge" id="randBadge">SEQUENTIAL</span>
+        <div class="stats-actions">
+          <button class="export-btn" onclick="exportJSON()">⬇ JSON</button>
+          <button class="export-btn" onclick="exportCSV()">⬇ CSV</button>
+        </div>
+      </div>
+
+      <div class="filter-bar" id="filterBar" style="display:none">
+        <span class="filter-label">SHOW:</span>
+        <button class="filter-btn active" onclick="setFilter('all',this)">ALL</button>
+        <button class="filter-btn" onclick="setFilter('open',this)">OPEN</button>
+        <button class="filter-btn" onclick="setFilter('closed',this)">CLOSED</button>
+        <input type="text" id="searchInput" placeholder="search port / banner..." oninput="renderTable()" />
+      </div>
+
+      <div class="results-area" id="scanResultsArea">
+        <div class="empty-state">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/>
+            <circle cx="12" cy="12" r="1" fill="currentColor"/>
+          </svg>
+          <p>CONFIGURE TARGET AND START SCAN</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PING VIEW -->
+    <div id="viewPing" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+      <div class="results-area" id="pingResultsArea">
+        <div class="empty-state">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12,6 12,12 16,14"/>
+          </svg>
+          <p>ENTER HOSTS AND CLICK PING HOSTS</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const API = '';
+  let currentProtocol = 'TCP';
+  let presets = {};
+  let scanResults = [];
+  let currentFilter = 'all';
+  let lastScanMeta = null;
+  let activeTab = 'scan';
+
+  async function init() {
+    checkHealth();
+    loadPresets();
+    loadHistory();
+  }
+
+  async function checkHealth() {
+    try {
+      const r = await fetch(`${API}/health`);
+      if (r.ok) {
+        document.getElementById('healthDot').classList.add('online');
+        document.getElementById('healthText').textContent = 'ONLINE';
+        document.getElementById('healthText').style.color = 'var(--green)';
+      }
+    } catch {
+      document.getElementById('healthText').textContent = 'OFFLINE';
+      document.getElementById('healthText').style.color = 'var(--red)';
+    }
+  }
+
+  async function loadPresets() {
+    try {
+      const r = await fetch(`${API}/scan/presets`);
+      presets = await r.json();
+    } catch {}
+  }
+
+  async function loadHistory() {
+    try {
+      const r = await fetch(`${API}/scan/history`);
+      renderHistory(await r.json());
+    } catch {}
+  }
+
+  // ── TABS ──
+  function switchTab(tab) {
+    activeTab = tab;
+    document.getElementById('tabScan').classList.toggle('active', tab === 'scan');
+    document.getElementById('tabPing').classList.toggle('active', tab === 'ping');
+    document.getElementById('viewScan').style.display = tab === 'scan' ? 'flex' : 'none';
+    document.getElementById('viewPing').style.display = tab === 'ping' ? 'flex' : 'none';
+  }
+
+  // ── PRESETS ──
+  document.getElementById('presetBtns').addEventListener('click', e => {
+    const btn = e.target.closest('.preset-btn');
+    if (!btn) return;
+    const key = btn.dataset.preset;
+    if (presets[key]) document.getElementById('portsInput').value = presets[key];
+  });
+
+  // ── PROTOCOL ──
+  document.getElementById('protoTCP').addEventListener('click', () => {
+    currentProtocol = 'TCP';
+    document.getElementById('protoTCP').classList.add('active');
+    document.getElementById('protoUDP').classList.remove('active');
+  });
+  document.getElementById('protoUDP').addEventListener('click', () => {
+    currentProtocol = 'UDP';
+    document.getElementById('protoUDP').classList.add('active');
+    document.getElementById('protoTCP').classList.remove('active');
+  });
+
+  // ── SCAN ──
+  async function startScan() {
+    const ip       = document.getElementById('targetInput').value.trim();
+    const ports    = document.getElementById('portsInput').value.trim();
+    const silent   = document.getElementById('silentMode').checked;
+    const randomize = document.getElementById('randomizeMode').checked;
+
+    if (!ip)    { toast('Enter a target IP or host', 'error'); return; }
+    if (!ports) { toast('Enter ports to scan', 'error'); return; }
+
+    const btn  = document.getElementById('scanBtn');
+    const fill = document.getElementById('progressFill');
+    btn.disabled = true;
+    btn.classList.add('scanning');
+    btn.textContent = '⏳ SCANNING...';
+    fill.className = 'progress-fill indeterminate';
+
+    switchTab('scan');
+    document.getElementById('statsBar').style.display = 'none';
+    document.getElementById('filterBar').style.display = 'none';
+    document.getElementById('scanResultsArea').innerHTML = `
+      <div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="1">
+          <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/>
+          <circle cx="12" cy="12" r="1" fill="currentColor"/>
+        </svg>
+        <p style="color:var(--green)">SCANNING ${escHtml(ip)}${randomize ? ' · RANDOMIZED ORDER' : ''}...</p>
+      </div>`;
+
+    try {
+      const resp = await fetch(`${API}/scan/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ip, ports, protocol: currentProtocol, silent_mode: silent, randomize })
+      });
+      if (!resp.ok) { const e = await resp.json(); throw new Error(e.detail || 'Scan failed'); }
+
+      const data = await resp.json();
+      scanResults = data.results;
+      lastScanMeta = { ip, ports, protocol: currentProtocol };
+
+      updateStats(data.stats);
+      renderTable();
+      loadHistory();
+      toast(`Scan complete — ${data.stats.open_ports} open port(s) · ${data.stats.scan_duration_seconds}s`, 'success');
+    } catch (err) {
+      toast(err.message, 'error');
+      document.getElementById('scanResultsArea').innerHTML = `<div class="empty-state"><p style="color:var(--red)">✕ ${escHtml(err.message)}</p></div>`;
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('scanning');
+      btn.textContent = '▶ SCAN NOW';
+      fill.className = 'progress-fill';
+      fill.style.width = '0';
+    }
+  }
+
+  // ── PING ──
+  async function startPing() {
+    const hosts = document.getElementById('pingHosts').value.trim();
+    const count = parseInt(document.getElementById('pingCount').value) || 3;
+
+    if (!hosts) { toast('Enter at least one host', 'error'); return; }
+
+    const btn  = document.getElementById('pingBtn');
+    const fill = document.getElementById('progressFill');
+    btn.disabled = true;
+    btn.classList.add('pinging');
+    btn.textContent = '⏳ PINGING...';
+    fill.className = 'progress-fill indeterminate blue-bar';
+
+    switchTab('ping');
+    document.getElementById('pingResultsArea').innerHTML = `
+      <div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1">
+          <circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/>
+        </svg>
+        <p style="color:var(--blue)">PINGING HOSTS...</p>
+      </div>`;
+
+    try {
+      const resp = await fetch(`${API}/monitor/ping`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hosts, count })
+      });
+      if (!resp.ok) { const e = await resp.json(); throw new Error(e.detail || 'Ping failed'); }
+
+      const results = await resp.json();
+      renderPingTable(results);
+      const online = results.filter(r => r.online).length;
+      toast(`Ping complete — ${online}/${results.length} hosts online`, online === results.length ? 'success' : 'info');
+    } catch (err) {
+      toast(err.message, 'error');
+      document.getElementById('pingResultsArea').innerHTML = `<div class="empty-state"><p style="color:var(--red)">✕ ${escHtml(err.message)}</p></div>`;
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('pinging');
+      btn.textContent = '◉ PING HOSTS';
+      fill.className = 'progress-fill';
+      fill.style.width = '0';
+    }
+  }
+
+  function renderPingTable(results) {
+    if (!results.length) {
+      document.getElementById('pingResultsArea').innerHTML = `<div class="no-results">NO RESULTS</div>`;
+      return;
+    }
+
+    const rows = results.map(r => {
+      const statusBadge = r.online
+        ? `<span class="online-badge">ONLINE</span>`
+        : `<span class="offline-badge">OFFLINE</span>`;
+
+      let latencyCell = `<span style="color:var(--text-dim)">—</span>`;
+      if (r.online && r.latency_avg_ms !== null) {
+        const cls = r.latency_avg_ms < 50 ? 'latency-good' : r.latency_avg_ms < 150 ? 'latency-medium' : 'latency-high';
+        latencyCell = `<span class="latency-val ${cls}">${r.latency_avg_ms}ms</span>`;
+      }
+
+      const minMax = (r.latency_min_ms !== null && r.latency_max_ms !== null)
+        ? `<span style="color:var(--text-dim);font-size:11px">${r.latency_min_ms}ms / ${r.latency_max_ms}ms</span>`
+        : `<span style="color:var(--text-dim)">—</span>`;
+
+      const lossColor = r.packet_loss_pct === 0 ? 'var(--green)' : r.packet_loss_pct < 50 ? 'var(--yellow)' : 'var(--red)';
+      const lossCell = r.packet_loss_pct !== null
+        ? `<span style="color:${lossColor};font-weight:bold">${r.packet_loss_pct}%</span>`
+        : `<span style="color:var(--text-dim)">—</span>`;
+
+      const errCell = r.error ? `<span style="color:var(--red);font-size:11px">${escHtml(r.error)}</span>` : `<span style="color:var(--text-dim)">—</span>`;
+
+      return `<tr>
+        <td><span class="ping-host">${escHtml(r.host)}</span></td>
+        <td>${statusBadge}</td>
+        <td>${latencyCell}</td>
+        <td>${minMax}</td>
+        <td>${lossCell}</td>
+        <td>${errCell}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('pingResultsArea').innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>HOST</th>
+            <th>STATUS</th>
+            <th>AVG LATENCY</th>
+            <th>MIN / MAX</th>
+            <th>PACKET LOSS</th>
+            <th>ERROR</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  // ── STATS ──
+  function updateStats(stats) {
+    document.getElementById('statTotal').textContent   = stats.total_ports;
+    document.getElementById('statOpen').textContent    = stats.open_ports;
+    document.getElementById('statClosed').textContent  = stats.closed_ports;
+    document.getElementById('statDuration').textContent = stats.scan_duration_seconds + 's';
+    document.getElementById('statWorkers').textContent  = stats.workers;
+
+    const badge = document.getElementById('randBadge');
+    if (stats.randomized) {
+      badge.textContent = 'RANDOMIZED';
+      badge.classList.add('on');
+    } else {
+      badge.textContent = 'SEQUENTIAL';
+      badge.classList.remove('on');
+    }
+
+    document.getElementById('statsBar').style.display  = 'flex';
+    document.getElementById('filterBar').style.display = 'flex';
+  }
+
+  // ── FILTER ──
+  function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTable();
+  }
+
+  // ── TABLE ──
+  function renderTable() {
+    const search = (document.getElementById('searchInput').value || '').toLowerCase();
+
+    const rows = scanResults.filter(r => {
+      if (currentFilter === 'open'   && !r.state.includes('open'))  return false;
+      if (currentFilter === 'closed' &&  r.state.includes('open'))  return false;
+      if (search) {
+        const h = `${r.port} ${r.state} ${r.banner || ''} ${r.ssl_info?.cn || ''}`.toLowerCase();
+        if (!h.includes(search)) return false;
+      }
+      return true;
+    });
+
+    if (!rows.length) {
+      document.getElementById('scanResultsArea').innerHTML = `<div class="no-results">NO RESULTS MATCH FILTER</div>`;
+      return;
+    }
+
+    const tbody = rows.map((r, i) => {
+      const stateClass = r.state === 'open' ? 'state-open'
+        : r.state === 'open|filtered' ? 'state-filtered'
+        : 'state-closed';
+      const stateLabel = r.state === 'error' ? 'CLOSED' : r.state.toUpperCase().replace('|', ' | ');
+
+      const bannerCell = r.banner
+        ? `<span class="banner-text" title="${escHtml(r.banner)}">${escHtml(r.banner.substring(0,60))}${r.banner.length > 60 ? '…' : ''}</span>`
+        : `<span style="color:var(--text-dim)">—</span>`;
+
+      let sslCell = `<span style="color:var(--text-dim)">—</span>`;
+      if (r.ssl_info) {
+        const cls  = r.ssl_info.is_valid ? 'ssl-valid' : 'ssl-invalid';
+        const icon = r.ssl_info.is_valid ? '✓' : '✗';
+        sslCell = `
+          <span class="ssl-chip ${cls}" onclick="toggleSSL(${i})">${icon} ${escHtml(r.ssl_info.cn || 'Unknown')}</span>
+          <div class="ssl-detail" id="ssl-${i}">
+            <div><span class="ssl-key">CN:&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="ssl-val">${escHtml(r.ssl_info.cn || '—')}</span></div>
+            <div><span class="ssl-key">Issuer: </span><span class="ssl-val">${escHtml(r.ssl_info.issuer || '—')}</span></div>
+            <div><span class="ssl-key">From:   </span><span class="ssl-val">${escHtml(r.ssl_info.valid_from || '—')}</span></div>
+            <div><span class="ssl-key">To:&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="ssl-val">${escHtml(r.ssl_info.valid_to || '—')}</span></div>
+            <div><span class="ssl-key">Valid:  </span><span class="ssl-val" style="color:${r.ssl_info.is_valid ? 'var(--green)' : 'var(--red)'}">${r.ssl_info.is_valid ? 'YES ✓' : 'NO ✗'}</span></div>
+          </div>`;
+      }
+
+      return `<tr>
+        <td><span class="port-num">${r.port}</span></td>
+        <td><span class="state-badge ${stateClass}">${stateLabel}</span></td>
+        <td><span class="proto-tag">${r.protocol}</span></td>
+        <td>${bannerCell}</td>
+        <td>${sslCell}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('scanResultsArea').innerHTML = `
+      <table>
+        <thead><tr>
+          <th>PORT</th><th>STATE</th><th>PROTO</th>
+          <th>BANNER / SERVICE</th><th>SSL / TLS</th>
+        </tr></thead>
+        <tbody>${tbody}</tbody>
+      </table>`;
+  }
+
+  function toggleSSL(i) {
+    document.getElementById(`ssl-${i}`)?.classList.toggle('visible');
+  }
+
+  // ── HISTORY ──
+  function renderHistory(items) {
+    const el = document.getElementById('historyList');
+    if (!items?.length) {
+      el.innerHTML = `<div style="color:var(--text-dim);font-size:11px;letter-spacing:1px">No scans yet</div>`;
+      return;
+    }
+    el.innerHTML = items.map(h => `
+      <div class="history-item" onclick="reloadScan('${escHtml(h.ip)}','${escHtml(h.ports)}','${h.protocol}')">
+        <div class="hi-host">${escHtml(h.ip)}</div>
+        <div class="hi-meta">${h.timestamp} · ${h.protocol}${h.randomize ? ' · RAND' : ''}</div>
+        <div class="hi-stats">
+          <span class="hi-open">▲ ${h.stats.open_ports} open</span>
+          <span class="hi-closed">▼ ${h.stats.closed_ports} closed</span>
+          <span style="color:var(--text-dim)">${h.stats.scan_duration_seconds}s · ${h.stats.workers}w</span>
+        </div>
+      </div>`).join('');
+  }
+
+  function reloadScan(ip, ports, proto) {
+    document.getElementById('targetInput').value = ip;
+    document.getElementById('portsInput').value  = ports;
+    currentProtocol = proto;
+    document.getElementById('protoTCP').classList.toggle('active', proto === 'TCP');
+    document.getElementById('protoUDP').classList.toggle('active', proto === 'UDP');
+  }
+
+  async function clearHistory() {
+    try {
+      await fetch(`${API}/scan/history`, { method: 'DELETE' });
+      renderHistory([]);
+      toast('History cleared', 'success');
+    } catch { toast('Failed to clear history', 'error'); }
+  }
+
+  // ── EXPORT ──
+  function exportJSON() {
+    if (!scanResults.length) { toast('No results to export', 'error'); return; }
+    const blob = new Blob([JSON.stringify({ meta: lastScanMeta, results: scanResults }, null, 2)], { type: 'application/json' });
+    download(blob, `nethound_${lastScanMeta.ip}_${Date.now()}.json`);
+    toast('JSON exported', 'success');
+  }
+
+  function exportCSV() {
+    if (!scanResults.length) { toast('No results to export', 'error'); return; }
+    const header = 'ip,port,protocol,state,banner,ssl_cn,ssl_issuer,ssl_valid_from,ssl_valid_to,ssl_is_valid';
+    const rows = scanResults.map(r => [
+      r.ip, r.port, r.protocol, r.state,
+      `"${(r.banner || '').replace(/"/g, '""')}"`,
+      r.ssl_info?.cn || '', r.ssl_info?.issuer || '',
+      r.ssl_info?.valid_from || '', r.ssl_info?.valid_to || '',
+      r.ssl_info?.is_valid ?? ''
+    ].join(','));
+    const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv' });
+    download(blob, `nethound_${lastScanMeta.ip}_${Date.now()}.csv`);
+    toast('CSV exported', 'success');
+  }
+
+  function download(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+  }
+
+  // ── UTILS ──
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  let toastTimer;
+  function toast(msg, type = '') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `show ${type}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = ''; }, 3500);
+  }
+
+  ['targetInput','portsInput'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') startScan(); });
+  });
+  document.getElementById('pingHosts').addEventListener('keydown', e => { if (e.key === 'Enter') startPing(); });
+
+  init();
+</script>
+</body>
+</html>

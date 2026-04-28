@@ -4,8 +4,9 @@ from typing import List, Optional, Dict, Any
 class ScanRequest(BaseModel):
     ip: str
     ports: str
-    protocol: str  = "TCP"
+    protocol: str = "TCP"
     silent_mode: bool = False
+    randomize: bool = False
 
 class SSLInfo(BaseModel):
     cn: Optional[str] = None
@@ -17,6 +18,7 @@ class SSLInfo(BaseModel):
 class ScanResponse(BaseModel):
     ip: str
     port: int
+    protocol: str = "TCP"
     state: str
     banner: Optional[str] = None
     ssl_info: Optional[SSLInfo] = None
@@ -24,3 +26,16 @@ class ScanResponse(BaseModel):
 class ScanResults(BaseModel):
     results: List[ScanResponse]
     stats: Dict[str, Any]
+
+class PingRequest(BaseModel):
+    hosts: str
+    count: int = 3
+
+class PingResult(BaseModel):
+    host: str
+    online: bool
+    latency_avg_ms: Optional[float] = None
+    latency_min_ms: Optional[float] = None
+    latency_max_ms: Optional[float] = None
+    packet_loss_pct: Optional[int] = None
+    error: Optional[str] = None
