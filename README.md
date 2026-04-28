@@ -4,8 +4,6 @@
 
 > Ferramenta de reconhecimento de rede — escaneamento de portas, captura de banners, inspeção SSL/TLS e monitoramento de disponibilidade de hosts.
 
-![Dashboard](nethound_backend/src/static/screenshots/dashboard.png)
-
 ## Funcionalidades
 
 - **Scanner TCP/UDP** — escaneia portas individuais, intervalos ou listas separadas por vírgula em qualquer IP ou hostname
@@ -17,14 +15,6 @@
 - **Presets de Portas** — atalhos para Web, Comuns, Banco de Dados, Acesso Remoto, E-mail e Top 100
 - **Histórico de Scans** — mantém os últimos 20 scans com replay por clique
 - **Exportação** — baixe os resultados em JSON ou CSV
-
-## Screenshots
-
-### Resultados do Scan de Portas
-![Resultados do Scan](nethound_backend/src/static/screenshots/port_scan_results.png)
-
-### Monitor de Ping
-![Monitor de Ping](nethound_backend/src/static/screenshots/ping_monitor.png)
 
 ## Tecnologias
 
